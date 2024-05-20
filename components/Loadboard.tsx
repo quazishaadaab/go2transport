@@ -258,7 +258,7 @@ export default function Loadboard() {
                         </Dropdown>
                         <Button
                             className="bg-foreground text-background"
-                            endContent={<PlusIcon />}
+                            endContent={<PlusIcon size={4}  width={4} height={5} />}
                             size="sm"
                         >
                             Add New
