@@ -26,6 +26,13 @@ import { ChevronDownIcon } from "./loadboard/ChevronDownIcon";
 import { SearchIcon } from "./loadboard/SearchIcon";
 import { columns, users, statusOptions } from "./loadboard/data";
 import { capitalize } from "./loadboard/utils";
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, RadioGroup, Radio } from "@nextui-org/react";
+import {Calendar} from "@nextui-org/react";
+import {DatePicker} from "@nextui-org/react";
+
+
+import CreateLoad from "./CreateLoad";
+
 
 const statusColorMap: Record<string, ChipProps["color"]> = {
     active: "success",
@@ -39,6 +46,9 @@ const INITIAL_VISIBLE_COLUMNS = ["bname", "rating", "progress", "origin", "desti
 type User = typeof users[0];
 
 export default function Loadboard() {
+
+    const { isOpen, onOpen, onOpenChange } = useDisclosure();
+
     const [filterValue, setFilterValue] = React.useState("");
     const [selectedKeys, setSelectedKeys] = React.useState<Selection>(new Set([]));
     const [visibleColumns, setVisibleColumns] = React.useState<Selection>(new Set(INITIAL_VISIBLE_COLUMNS));
@@ -95,7 +105,7 @@ export default function Loadboard() {
     }, [sortDescriptor, items]);
 
     const renderCell = React.useCallback((user: User, columnKey: React.Key) => {
-        const cellValue  = user[columnKey as keyof User] as number | string;
+        const cellValue = user[columnKey as keyof User] as number | string;
 
         switch (columnKey) {
             case "bname":
@@ -258,11 +268,12 @@ export default function Loadboard() {
                         </Dropdown>
                         <Button
                             className="bg-foreground text-background"
-                            endContent={<PlusIcon size={4}  width={4} height={5} />}
+                            endContent={<PlusIcon size={4} width={4} height={5} />}
                             size="sm"
-                        >
+                            onPress={onOpen}                        >
                             Add New
                         </Button>
+
                     </div>
                 </div>
                 <div className="flex justify-between items-center">
@@ -338,58 +349,147 @@ export default function Loadboard() {
     return (
         <>
 
-            <Table
-                className="bg-transparent"
-                isCompact
-                removeWrapper
-                aria-label="Example table with custom cells, pagination and sorting"
-                bottomContent={bottomContent}
-                bottomContentPlacement="outside"
-                checkboxesProps={{
-                    classNames: {
-                        wrapper: "after:bg-foreground after:text-background text-background",
-                    },
-                }}
-                classNames={classNames}
-                selectedKeys={selectedKeys}
-                selectionMode="multiple"
-                sortDescriptor={sortDescriptor}
-                topContent={topContent}
-                topContentPlacement="outside"
-                onSelectionChange={setSelectedKeys}
-                onSortChange={setSortDescriptor}
-            >
-                <TableHeader columns={headerColumns}>
-                    {(column) => (
-                        <TableColumn
-                            key={column.uid}
-                            align={column.uid === "actions" ? "center" : "start"}
-                            allowsSorting={column.sortable}
-                        >
-                            {column.name}
-                        </TableColumn>
-                    )}
-                </TableHeader>
+            <div className=" w-full h-full  ">
+                <Table
+                    className="bg-transparent"
+                    isCompact
+                    removeWrapper
+                    aria-label="Example table with custom cells, pagination and sorting"
+                    bottomContent={bottomContent}
+                    bottomContentPlacement="outside"
+                    checkboxesProps={{
+                        classNames: {
+                            wrapper: "after:bg-foreground after:text-background text-background",
+                        },
+                    }}
+                    classNames={classNames}
+                    selectedKeys={selectedKeys}
+                    selectionMode="multiple"
+                    sortDescriptor={sortDescriptor}
+                    topContent={topContent}
+                    topContentPlacement="outside"
+                    onSelectionChange={setSelectedKeys}
+                    onSortChange={setSortDescriptor}
+                >
+                    <TableHeader columns={headerColumns}>
+                        {(column) => (
+                            <TableColumn
+                                key={column.uid}
+                                align={column.uid === "actions" ? "center" : "start"}
+                                allowsSorting={column.sortable}
+                            >
+                                {column.name}
+                            </TableColumn>
+                        )}
+                    </TableHeader>
 
-                <TableBody emptyContent={"No users found"} items={sortedItems}>
-                    {(item) => (
+                    <TableBody emptyContent={"No users found"} items={sortedItems}>
+                        {(item) => (
 
-                        <TableRow key={item.id}>
-                            {
-                                (columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>
+                            <TableRow key={item.id}>
+                                {
+                                    (columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>
 
-                            }
-                        </TableRow>
-
-
-                    )}
+                                }
+                            </TableRow>
 
 
-                </TableBody>
+                        )}
 
 
-            </Table>
+                    </TableBody>
 
+
+                </Table>
+                <Modal className=" w-[100%] h-[90%] absolute  " //max-w-full will make the modal full page
+                    isOpen={isOpen}
+                    placement={'center'}
+                    onOpenChange={onOpenChange}
+                    backdrop={"blur"}
+                >
+                    <ModalContent >
+                        {(onClose) => (
+                            <>
+                                <ModalHeader className="flex flex-col gap-1">Create A Load</ModalHeader>
+                                <ModalBody>
+                                    <Input
+                                        type="string"
+                                        label="Origin"
+                                        description="Pickup location"
+                                        className="max-w-xs"
+                                        labelPlacement="outside"
+                                        placeholder=" "
+
+                                    />
+
+
+<Input
+                                        type="string"
+                                        label="Destination"
+                                        description="Drop off location"
+                                        className="max-w-xs"
+                                        placeholder=" "
+                                        labelPlacement="outside"
+
+                                    />
+
+<Input
+                                        type="number"
+
+                                        label="Weight"
+                                        description="Weight of Load"
+                                        className="max-w-xs"
+                                        placeholder=" "
+                                        labelPlacement="outside"
+                                        startContent={
+                                            <div className="pointer-events-none flex items-center">
+                                              <span className="text-default-400 text-small">kg</span>
+                                            </div>
+                                          }
+                                    />
+<Input
+          type="number"
+          label="Price"
+          placeholder="0.00"
+          labelPlacement="outside"
+          startContent={
+            <div className="pointer-events-none flex items-center">
+              <span className="text-default-400 text-small">$</span>
+            </div>
+          }
+          endContent={
+            <div className="flex items-center">
+              <label className="sr-only" htmlFor="currency">
+                Currency
+              </label>
+              <select
+                className="outline-none border-0 bg-transparent text-default-400 text-small"
+                id="currency"
+                name="currency"
+              >
+                <option>USD</option>
+              </select>
+            </div>
+          }
+        />
+
+<div className="text-sm font-[400] mt-2">PickUp Date</div>
+<DatePicker label="Pickup Date" className="max-w-[284px]" />
+                                </ModalBody>
+                                <ModalFooter>
+                                    <Button color="danger" variant="light" onPress={onClose}>
+                                        Close
+                                    </Button>
+                                    <Button color="primary" onPress={onClose}>
+                                        Action
+                                    </Button>
+                                </ModalFooter>
+                            </>
+                        )}
+                    </ModalContent>
+                </Modal>
+
+            </div>
         </>
     );
 }
