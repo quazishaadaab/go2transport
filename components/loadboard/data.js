@@ -1,17 +1,18 @@
 import React from "react";
+
 const columns = [
   {name: "ID", uid: "id", sortable: true},
-  {name: "BROKER NAME", uid: "bname", sortable: true},
+  {name: "BROKER NAME", uid: "org_name", sortable: true},
   {name: "RATING", uid: "rating", sortable: true},
   {name: "PROGRESS", uid: "progress", sortable: true},
   {name: "ORIGIN", uid: "origin",sortable: true},
   {name: "DESTINATION", uid: "destination",sortable: true},
 
-  {name: "SIZE/WEIGHT", uid: "size_weight", sortable: true},
-  {name: "PICKUP DATE", uid: "date", sortable: true},
-  {name: "EQUIPMENT TYPE", uid: "equip_type", sortable: true},
+  {name: "WEIGHT", uid: "weight", sortable: true},
+  {name: "PICKUP DATE", uid: "pickup_date", sortable: true},
+  {name: "EQUIPMENT TYPE", uid: "equipment_type", sortable: true},
   {name: "PRICE", uid: "price", sortable: true},
-
+  {name:'detail',uid:'detail'}
 
 ];
 
@@ -20,6 +21,11 @@ const statusOptions = [
   {name: "Paused", uid: "paused"},
   {name: "Vacation", uid: "vacation"},
 ];
+
+async function getLoads(){
+
+
+}
 
 const users = [
   {
@@ -62,5 +68,7 @@ const users = [
 //     email: "tony.reichert@example.com",
 //   }
   ];
+
+
 
 export {columns, users, statusOptions};

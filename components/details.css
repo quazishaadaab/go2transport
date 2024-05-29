@@ -1,0 +1,17 @@
+body {
+    margin: 0;
+    padding: 0;
+}
+.leaflet-routing-alternatives-container {
+display: none;
+}
+.leaflet-routing-container leaflet-bar leaflet-routing-collapsible leaflet-control{
+display: none;
+}
+.leaflet-bar {
+display: none;
+}
+
+.leaflet-control-container .leaflet-routing-container-hide {
+    display: none;
+  }

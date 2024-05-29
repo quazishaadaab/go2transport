@@ -24,14 +24,20 @@ import { PlusIcon } from "./loadboard/PlusIcon";
 import { VerticalDotsIcon } from "./loadboard/VerticalDotsIcon";
 import { ChevronDownIcon } from "./loadboard/ChevronDownIcon";
 import { SearchIcon } from "./loadboard/SearchIcon";
-import { columns, users, statusOptions } from "./loadboard/data";
+import { columns, statusOptions } from "./loadboard/data";
 import { capitalize } from "./loadboard/utils";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, RadioGroup, Radio } from "@nextui-org/react";
-import {Calendar} from "@nextui-org/react";
-import {DatePicker} from "@nextui-org/react";
-
+import { Calendar } from "@nextui-org/react";
+import { DatePicker } from "@nextui-org/react";
+import { users } from "./loadboard/data";
+import DataService from "../services/service.js"
+import toast, { Toaster } from 'react-hot-toast';
+import { format } from 'date-fns';
+import { v4 as uuidv4 } from 'uuid';
+import Details from './Details.js'
 
 import CreateLoad from "./CreateLoad";
+import axios from "axios";
 
 
 const statusColorMap: Record<string, ChipProps["color"]> = {
@@ -41,23 +47,166 @@ const statusColorMap: Record<string, ChipProps["color"]> = {
 };
 
 //these are the uuids of the columns.
-const INITIAL_VISIBLE_COLUMNS = ["bname", "rating", "progress", "origin", "destination", "size_weight", "date", "equip_type", "price"];
+const INITIAL_VISIBLE_COLUMNS = ["org_name", "rating", "progress", "origin", "destination", "weight", "pickup_date", "equipment_type", "price"];
 
-type User = typeof users[0];
+//defines the user state of all the row data for the table
+interface User {
 
+    org_name: string,
+    rating: string,
+    progress: number,
+    origin: string,
+    destination: string,
+    weight: number,
+    pickup_date: string,
+    equipment_type: string,
+    price: number
+
+}
 export default function Loadboard() {
 
+
+    const [users, setUsers] = React.useState([])
+
+    const [loadID, setLoadID] = React.useState('')
+
+    const [origin, setOrigin] = React.useState('')
+
+    const [destination, setDestination] = React.useState('')
+
+    const [weight, setWeight] = React.useState<number>(0)
+
+    const [price, setPrice] = React.useState(0)
+
+    const [equipment_type, setEquipment_type] = React.useState('')
+
+    const [pickup_date, setPickup_date] = React.useState<string>('')
+
+    const [loadInstance, setLoadInstance] = React.useState<string>('')
+
+    const [toggleMap,setToggleMap] = React.useState(true) //when clicked change to true, when clicked again change to false
+
+    const containerRef = React.useRef<any>(null)
+    const iframe_ref = React.useRef<any>(null); //dont need this
+
+    React.useEffect(() => {
+
+        getLoads()
+
+        //we use the loadID to refresh the table everytime a unique load is created. the table will be updated. this is not the real loaddi
+    }, [loadID])
+
+    React.useEffect(() => {
+
+ async function testme(){
+              const newElement = document.createElement('iframe');
+              console.log('poop')
+
+              const response =  axios.post(`http://localhost:5001/launchLoadInstanceMap`, { loadID: loadInstance });
+              console.log('res')
+              newElement.src = `http://localhost:5001/maps/${loadInstance}/demo.html`;
+              newElement.width = '100%';
+              newElement.height = '100%';
+        
+              if (containerRef.current) {
+                containerRef.current.appendChild(newElement);
+                // iframe_ref = containerRef; // Store a reference to the iframe element
+              }              
+        
+          
+            }
+          
+            testme();
+        
+        // return () => {
+        //     if (containerRef.current && containerElement.current && containerRef.current.parentElement === containerRef.current) {
+        //         containerRef.current.removeChild(containerElement.current);
+        //       }
+        //   };
+
+
+    }, [loadInstance,toggleMap])
+    
+//     async function createMap(loadInstance){
+
+//         const response= await axios.post(`http://localhost:5001/launchLoadInstanceMap`, { loadID: loadInstance });
+//         const newElement = document.createElement('iframe')
+//         newElement.src = `http://localhost:5001/maps/${loadInstance}/demo.html`;
+//         newElement.width = '800';
+//         newElement.height = '600';
+
+// if(loadInstance){
+//         containerRef.current.appendChild(newElement);
+//             // containerElement.current = newElement; // Store a reference to the iframe element
+// }
+//     }
+
+    function formatTheDate(value: any) {
+        console.log(value)
+        const dateVal = new Date(value?.year, value?.month - 1, value?.day); // Note: JavaScript months are 0-based, so we subtract 1 from the month
+
+        const dateStr = format(dateVal, 'yyyy-MM-dd');
+        setPickup_date(dateStr)
+    }
+
+
+    async function getLoads() {
+
+        const { data } = await DataService?.getLoads() as any;
+        setUsers(data)
+
+
+    }
+
+
+
     const { isOpen, onOpen, onOpenChange } = useDisclosure();
+    const { isOpen: isOpen2, onOpen: onOpen2, onOpenChange: onOpenChange2 } = useDisclosure();
 
     const [filterValue, setFilterValue] = React.useState("");
     const [selectedKeys, setSelectedKeys] = React.useState<Selection>(new Set([]));
     const [visibleColumns, setVisibleColumns] = React.useState<Selection>(new Set(INITIAL_VISIBLE_COLUMNS));
     const [statusFilter, setStatusFilter] = React.useState<Selection>("all");
-    const [rowsPerPage, setRowsPerPage] = React.useState(5);
+    const [rowsPerPage, setRowsPerPage] = React.useState(20);
     const [sortDescriptor, setSortDescriptor] = React.useState<SortDescriptor>({
         column: "age",
         direction: "ascending",
     });
+
+
+
+    async function insertLoad(origin: string, destination: string, weight: number, price: number, equipment_type: string, date: string) {
+
+        //check if values entered
+
+        if (origin && destination && weight && price && equipment_type && date) {
+            //generate uuid to change load table state
+
+            const uuid = uuidv4();
+            setLoadID(uuid)
+
+            //submit values
+            const loadData = {
+                origin: origin,
+                destination: destination,
+                weight: weight,
+                price: price,
+                equipment_type: equipment_type,
+                pickup_date: date
+            }
+            DataService.createLoad(loadData)
+            toast.success('Success! Load submitted')
+
+        } else {
+            toast.error('No inputs can be blank')
+        }
+
+    }
+
+
+
+
+
     const [page, setPage] = React.useState(1);
 
     const pages = Math.ceil(users.length / rowsPerPage);
@@ -74,8 +223,10 @@ export default function Loadboard() {
         let filteredUsers = [...users];
 
         if (hasSearchFilter) {
-            filteredUsers = filteredUsers.filter((user) =>
-                user.bname.toLowerCase().includes(filterValue.toLowerCase()),
+            filteredUsers = filteredUsers.filter((user: User) => {
+                console.log('lc', user)
+                user.org_name?.toLowerCase().includes(filterValue.toLowerCase())
+            }
             );
         }
         // if (statusFilter !== "all" && Array.from(statusFilter).length !== statusOptions.length) {
@@ -108,16 +259,16 @@ export default function Loadboard() {
         const cellValue = user[columnKey as keyof User] as number | string;
 
         switch (columnKey) {
-            case "bname":
+            case "org_name":
                 return (
                     <User
                         classNames={{
                             description: "text-default-500",
                         }}
-                        description={user.bname}
+                        description={user?.org_name}
                         name={cellValue}
                     >
-                        {user.bname}
+                        {user?.org_name}
                     </User>
                 );
             case "rating":
@@ -149,37 +300,12 @@ export default function Loadboard() {
 
                     </div>
                 )
-            //   case "status":
-            //     return (
-            //       <Chip
-            //         className="capitalize border-none gap-1 text-default-600"
-            //         color={statusColorMap[user.status]}
-            //         size="sm"
-            //         variant="dot"
-            //       >
-            //         {cellValue}
-            //       </Chip>
-            //     );
-            //   case "actions":
-            //     return (
-            //       <div className="relative flex justify-end items-center gap-2">
-            //         <Dropdown className="bg-background border-1 border-default-200">
-            //           <DropdownTrigger>
-            //             <Button isIconOnly radius="full" size="sm" variant="light">
-            //               <VerticalDotsIcon className="text-default-400" />
-            //             </Button>
-            //           </DropdownTrigger>
-            //           <DropdownMenu>
-            //             <DropdownItem>View</DropdownItem>
-            //             <DropdownItem>Edit</DropdownItem>
-            //             <DropdownItem>Delete</DropdownItem>
-            //           </DropdownMenu>
-            //         </Dropdown>
-            //       </div>
-            //     );
+            
             default:
                 return cellValue;
+
         }
+
     }, []);
 
 
@@ -346,6 +472,8 @@ export default function Loadboard() {
     );
 
     console.log('threems', sortedItems)
+
+
     return (
         <>
 
@@ -364,7 +492,7 @@ export default function Loadboard() {
                     }}
                     classNames={classNames}
                     selectedKeys={selectedKeys}
-                    selectionMode="multiple"
+                    selectionMode="single"
                     sortDescriptor={sortDescriptor}
                     topContent={topContent}
                     topContentPlacement="outside"
@@ -384,24 +512,26 @@ export default function Loadboard() {
                     </TableHeader>
 
                     <TableBody emptyContent={"No users found"} items={sortedItems}>
-                        {(item) => (
-
-                            <TableRow key={item.id}>
+                        {(item: any) => (
+                            <TableRow key={item.id} onClick= {async(e)=>{setLoadInstance(item.id); onOpen2(); setToggleMap(toggleMap => !toggleMap);
+                            }}>
                                 {
-                                    (columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>
+                                    (columnKey) =>( <TableCell>{renderCell(item, columnKey)}</TableCell> )
+
 
                                 }
+                                
                             </TableRow>
+                            
 
-
-                        )}
+)}
 
 
                     </TableBody>
 
 
                 </Table>
-                <Modal className=" w-[100%] h-[90%] absolute  " //max-w-full will make the modal full page
+                <Modal className=" w-[100%] h-[95%] absolute   " //max-w-full will make the modal full page
                     isOpen={isOpen}
                     placement={'center'}
                     onOpenChange={onOpenChange}
@@ -419,21 +549,23 @@ export default function Loadboard() {
                                         className="max-w-xs"
                                         labelPlacement="outside"
                                         placeholder=" "
-
+                                        onChange={(e) => { setOrigin(e.target.value) }}
                                     />
 
 
-<Input
+                                    <Input
                                         type="string"
                                         label="Destination"
                                         description="Drop off location"
                                         className="max-w-xs"
                                         placeholder=" "
                                         labelPlacement="outside"
+                                        onChange={(e) => { setDestination(e.target.value) }}
+
 
                                     />
 
-<Input
+                                    <Input
                                         type="number"
 
                                         label="Weight"
@@ -441,46 +573,67 @@ export default function Loadboard() {
                                         className="max-w-xs"
                                         placeholder=" "
                                         labelPlacement="outside"
+
                                         startContent={
                                             <div className="pointer-events-none flex items-center">
-                                              <span className="text-default-400 text-small">kg</span>
+                                                <span className="text-default-400 text-small">kg</span>
                                             </div>
-                                          }
-                                    />
-<Input
-          type="number"
-          label="Price"
-          placeholder="0.00"
-          labelPlacement="outside"
-          startContent={
-            <div className="pointer-events-none flex items-center">
-              <span className="text-default-400 text-small">$</span>
-            </div>
-          }
-          endContent={
-            <div className="flex items-center">
-              <label className="sr-only" htmlFor="currency">
-                Currency
-              </label>
-              <select
-                className="outline-none border-0 bg-transparent text-default-400 text-small"
-                id="currency"
-                name="currency"
-              >
-                <option>USD</option>
-              </select>
-            </div>
-          }
-        />
+                                        }
+                                        onValueChange={setWeight as any}
 
-<div className="text-sm font-[400] mt-2">PickUp Date</div>
-<DatePicker label="Pickup Date" className="max-w-[284px]" />
+                                    />
+
+                                    <Input
+                                        type="string"
+                                        label="Equipment Type"
+                                        description="Type of Vehicle Needed"
+                                        className="max-w-xs"
+                                        placeholder=" "
+                                        labelPlacement="outside"
+                                        onChange={(e) => { setEquipment_type(e.target.value) }}
+
+
+                                    />
+                                    <Input
+                                        type="number"
+                                        label="Price"
+                                        placeholder="0.00"
+                                        labelPlacement="outside"
+                                        onValueChange={setPrice as any}
+
+                                        startContent={
+                                            <div className="pointer-events-none flex items-center">
+                                                <span className="text-default-400 text-small">$</span>
+                                            </div>
+                                        }
+                                        endContent={
+                                            <div className="flex items-center">
+                                                <label className="sr-only" htmlFor="currency">
+                                                    Currency
+                                                </label>
+                                                <select
+                                                    className="outline-none border-0 bg-transparent text-default-400 text-small"
+                                                    id="currency"
+                                                    name="currency"
+                                                >
+                                                    <option>USD</option>
+                                                </select>
+                                            </div>
+                                        }
+                                    />
+
+                                    <div className="text-sm font-[400] mt-2">PickUp Date</div>
+                                    <DatePicker label="Pickup Date" className="max-w-[284px]" onChange={(value: any) => {
+
+                                        formatTheDate(value);
+
+                                    }} />
                                 </ModalBody>
                                 <ModalFooter>
                                     <Button color="danger" variant="light" onPress={onClose}>
                                         Close
                                     </Button>
-                                    <Button color="primary" onPress={onClose}>
+                                    <Button color="primary" onClick={(e) => { insertLoad(origin, destination, weight, price, equipment_type, pickup_date) }}>
                                         Action
                                     </Button>
                                 </ModalFooter>
@@ -489,6 +642,58 @@ export default function Loadboard() {
                     </ModalContent>
                 </Modal>
 
+                <Button
+                    className="bg-foreground text-background"
+                    endContent={<PlusIcon size={4} width={4} height={5} />}
+                    size="sm"
+                    onPress={onOpen2}                        >
+                    Details
+                </Button>
+
+
+
+                <Modal classNames={{
+                    wrapper: "flex flex-end ml-[30%]   overflow-hidden                    ",
+                    base: "max-w-[50%] h-full rounded-none",
+                }} //max-w-full will make the modal full page
+                    isOpen={isOpen2}
+                    placement={'auto'}
+                    onOpenChange={onOpenChange2}
+                    backdrop={"opaque"}
+                    isDismissable={true}
+                    shouldBlockScroll={true}
+                >
+                    <ModalContent  >
+                        {(onClose2) => (
+                            <>
+                                {/* <ModalHeader className="flex flex-col gap-1">View Load Details</ModalHeader> */}
+                                <ModalBody>
+<div className="h-[40%] w-[100%]  max-w-full" ref={containerRef}>
+
+
+<Details id={loadInstance} ></Details>
+
+
+</div>
+
+                                    <div className="text-sm font-[400] mt-2">PickUp Date</div>
+
+                                    <DatePicker label="Pickup Date" className="max-w-[284px]" />
+                                    {loadInstance}
+
+                                </ModalBody>
+                                <ModalFooter>
+                                    <Button color="danger" variant="light" onPress={onClose2}>
+                                        Close
+                                    </Button>
+                                    <Button color="primary" onPress={onClose2}>
+                                        Action
+                                    </Button>
+                                </ModalFooter>
+                            </>
+                        )}
+                    </ModalContent>
+                </Modal>
             </div>
         </>
     );
